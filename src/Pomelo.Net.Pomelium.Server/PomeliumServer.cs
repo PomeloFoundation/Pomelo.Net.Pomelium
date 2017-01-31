@@ -21,6 +21,9 @@ namespace Pomelo.Net.Pomelium.Server
         private ISession _session;
         private IServiceProvider _serviceProvider;
 
+        public dynamic Client(Guid id) => _clients[id];
+        public dynamic Client(string id) => _clients[Guid.Parse(id)];
+
         public PomeliumServer(IPomeliumHubLocator pomeliumHubLocator = null, ISession session = null, IServiceProvider serviceProvider = null)
         {
             _pomeliumHubLocator = pomeliumHubLocator ?? new DefaultPomeliumHubLocator();
@@ -71,6 +74,7 @@ namespace Pomelo.Net.Pomelium.Server
             {
                 var id = Guid.NewGuid();
                 _clients.Add(id, sender);
+                body.SessionId = id;
                 await ResponseAsync(sender, new PacketBody
                 {
                     ReturnValue = id,
@@ -119,7 +123,8 @@ namespace Pomelo.Net.Pomelium.Server
                         Client = sender,
                         Request = body,
                         Session = body.SessionId.HasValue ? new SessionCollection(_session, body.SessionId.Value) : null,
-                        Resolver = _serviceProvider
+                        Resolver = _serviceProvider,
+                        SessionId = body.SessionId.Value
                     };
                     hubInstance.Context = ctx;
                     var method = hub.GetTypeInfo().GetMethod(body.Method);
