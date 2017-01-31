@@ -1,0 +1,69 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{BF1B960A-25ED-48BE-B541-A6613B161F99}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9A49D72E-DB8D-4792-B0EF-24F52A4667C2}"
+	ProjectSection(SolutionItems) = preProject
+		global.json = global.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{CA87D1FA-F100-4A45-B1EE-F6922CA15F2C}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Pomelo.Net.Pomelium.Client", "src\Pomelo.Net.Pomelium.Client\Pomelo.Net.Pomelium.Client.xproj", "{975C1E4A-97E5-411A-A061-21EC9C097014}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Pomelo.Net.Pomelium.Server", "src\Pomelo.Net.Pomelium.Server\Pomelo.Net.Pomelium.Server.xproj", "{E87FBE4C-93C6-42C8-8090-31424F21CE7F}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Pomelo.Net.Pomelium.Core", "src\Pomelo.Net.Pomelium.Core\Pomelo.Net.Pomelium.Core.xproj", "{7DC2C116-C683-478C-9DAE-C88574D1BC54}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Pomelo.Net.Pomelium.Test", "test\Pomelo.Net.Pomelium.Test\Pomelo.Net.Pomelium.Test.xproj", "{A525EC32-007C-48D2-BEA8-995897B2CB55}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Pomelo.Net.Pomelium.TestServer", "test\Pomelo.Net.Pomelium.TestServer\Pomelo.Net.Pomelium.TestServer.xproj", "{B1500864-5ED4-4808-BE18-91FED06DB895}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Pomelo.Net.Pomelium", "src\Pomelo.Net.Pomelium\Pomelo.Net.Pomelium.xproj", "{F7F7516B-2A53-4F56-892C-33D775E8C049}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{975C1E4A-97E5-411A-A061-21EC9C097014}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{975C1E4A-97E5-411A-A061-21EC9C097014}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{975C1E4A-97E5-411A-A061-21EC9C097014}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{975C1E4A-97E5-411A-A061-21EC9C097014}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E87FBE4C-93C6-42C8-8090-31424F21CE7F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E87FBE4C-93C6-42C8-8090-31424F21CE7F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E87FBE4C-93C6-42C8-8090-31424F21CE7F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E87FBE4C-93C6-42C8-8090-31424F21CE7F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7DC2C116-C683-478C-9DAE-C88574D1BC54}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7DC2C116-C683-478C-9DAE-C88574D1BC54}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7DC2C116-C683-478C-9DAE-C88574D1BC54}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7DC2C116-C683-478C-9DAE-C88574D1BC54}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A525EC32-007C-48D2-BEA8-995897B2CB55}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A525EC32-007C-48D2-BEA8-995897B2CB55}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A525EC32-007C-48D2-BEA8-995897B2CB55}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A525EC32-007C-48D2-BEA8-995897B2CB55}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1500864-5ED4-4808-BE18-91FED06DB895}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1500864-5ED4-4808-BE18-91FED06DB895}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1500864-5ED4-4808-BE18-91FED06DB895}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1500864-5ED4-4808-BE18-91FED06DB895}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7F7516B-2A53-4F56-892C-33D775E8C049}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7F7516B-2A53-4F56-892C-33D775E8C049}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7F7516B-2A53-4F56-892C-33D775E8C049}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7F7516B-2A53-4F56-892C-33D775E8C049}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{975C1E4A-97E5-411A-A061-21EC9C097014} = {BF1B960A-25ED-48BE-B541-A6613B161F99}
+		{E87FBE4C-93C6-42C8-8090-31424F21CE7F} = {BF1B960A-25ED-48BE-B541-A6613B161F99}
+		{7DC2C116-C683-478C-9DAE-C88574D1BC54} = {BF1B960A-25ED-48BE-B541-A6613B161F99}
+		{A525EC32-007C-48D2-BEA8-995897B2CB55} = {CA87D1FA-F100-4A45-B1EE-F6922CA15F2C}
+		{B1500864-5ED4-4808-BE18-91FED06DB895} = {CA87D1FA-F100-4A45-B1EE-F6922CA15F2C}
+		{F7F7516B-2A53-4F56-892C-33D775E8C049} = {BF1B960A-25ED-48BE-B541-A6613B161F99}
+	EndGlobalSection
+EndGlobal
