@@ -5,32 +5,34 @@ The following sample is showing you how to use Pomelium
 
 Server side：
 ```c#
-public static void Main(string[] args)
+public class Program 
 {
-    var server = PomeliumServer.CreateServer();
-    server.OnConnectedEvents += Server_OnConnectedEvents;
-    server.OnDisconnectedEvents += Server_OnDisconnectedEvents;
-    server.Start("127.0.0.1", 6000);
-    Console.Read();
-}
+    public static void Main(string[] args)
+    {
+        var server = PomeliumServer.CreateServer();
+        server.OnConnectedEvents += Server_OnConnectedEvents;
+        server.OnDisconnectedEvents += Server_OnDisconnectedEvents;
+        server.Start("127.0.0.1", 6000);
+        Console.Read();
+    }
 
-private static void Server_OnDisconnectedEvents(Server.Client.LocalClient obj)
-{
-    Console.WriteLine(obj.SessionId + " Disconnected");
-}
+    private static void Server_OnDisconnectedEvents(Server.Client.LocalClient obj)
+    {
+        Console.WriteLine(obj.SessionId + " Disconnected");
+    }
 
-private static void Server_OnConnectedEvents(Server.Client.LocalClient obj)
-{
-    Console.WriteLine(obj.SessionId + " Connected");
-}
+    private static void Server_OnConnectedEvents(Server.Client.LocalClient obj)
+    {
+        Console.WriteLine(obj.SessionId + " Connected");
+    }
 }
 
 public class TestHub : PomeliumHub
 {
-public int TestMethod(int a, int b)
-{
-    return a + b;
-}
+    public int TestMethod(int a, int b)
+    {
+        return a + b;
+    }
 }
 ```
 
