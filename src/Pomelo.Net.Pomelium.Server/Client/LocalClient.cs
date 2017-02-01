@@ -10,7 +10,6 @@ namespace Pomelo.Net.Pomelium.Server.Client
 {
     public class LocalClient : DynamicObject, IClient
     {
-        private PomeliumServer _pomeliumServer;
         private TcpClient _tcpClient;
         private ISemaphoreProvider _semaphoreProvider;
 

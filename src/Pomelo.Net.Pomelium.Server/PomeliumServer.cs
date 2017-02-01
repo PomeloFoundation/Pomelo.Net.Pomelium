@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Text;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using Newtonsoft.Json;
 using Pomelo.Net.Pomelium.Server.Client;
 using Pomelo.Net.Pomelium.Server.Session;
@@ -23,6 +25,11 @@ namespace Pomelo.Net.Pomelium.Server
         private IHubActivitor _hubActivitor;
         private IClientCollection _clientCollection;
         private INodeProvider _nodeProvider;
+        private Timer _heartbeatTimer;
+        private bool _heartbeatLocker;
+
+        public event Action<LocalClient> OnConnectedEvents;
+        public event Action<LocalClient> OnDisconnectedEvents;
 
         public dynamic Client(Guid id)
         {
@@ -49,6 +56,33 @@ namespace Pomelo.Net.Pomelium.Server
             _hubActivitor = hubActivitor;
             _clientCollection = clientCollection;
             _nodeProvider = nodeProvider;
+            _heartbeatTimer = new Timer(TimerCallback, null, 0, 5000);
+        }
+
+        protected virtual async void TimerCallback(object state)
+        {
+            if (_heartbeatLocker)
+                return;
+            _heartbeatLocker = true;
+            var tasks = new List<Task>();
+            foreach(var x in _clientCollection.GetLocalClients())
+            {
+                tasks.Add(Task.Run(async ()=> 
+                {
+                    try
+                    {
+                        await x.SendAsync(new Packet { SessionId = x.SessionId, Type = PacketType.Heartbeat });
+                    }
+                    catch
+                    {
+                        await _clientCollection.RemoveLocalClientAsync(x);
+                        OnDisconnected(x);
+                        GC.Collect();
+                    }
+                }));
+            }
+            Task.WaitAll(tasks.ToArray());
+            _heartbeatLocker = false;
         }
 
         public async void Start(string address, int port)
@@ -170,12 +204,12 @@ namespace Pomelo.Net.Pomelium.Server
 
         protected virtual async Task OnConnected(LocalClient Client)
         {
-
+            OnConnectedEvents?.Invoke(Client);
         }
 
         protected virtual async Task OnDisconnected(LocalClient Client)
         {
-            await _clientCollection.RemoveLocalClientAsync(Client);
+            OnDisconnectedEvents?.Invoke(Client);
         }
 
         protected virtual bool CheckNode(Guid serverId)

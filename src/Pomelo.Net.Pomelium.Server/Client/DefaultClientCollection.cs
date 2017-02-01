@@ -148,5 +148,10 @@ namespace Pomelo.Net.Pomelium.Server.Client
             await _distributedCache.SetStringAsync(_pomeliumOptions.ClientsCachingPrefix + _serverIdentifier.GetIdentifier(), JsonConvert.SerializeObject(clientInfo));
             _lockerNodeClients.Release();
         }
+
+        public IEnumerable<LocalClient> GetLocalClients()
+        {
+            return _dic.Select(x => x.Value as LocalClient);
+        }
     }
 }

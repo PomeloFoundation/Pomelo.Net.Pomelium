@@ -12,6 +12,7 @@ namespace Pomelo.Net.Pomelium.Server.Client
         Task AddClientIntoGroupAsync(IClient client, string group);
         Task RemoveClientFromGroupAsync(IClient client, string group);
         Task<IEnumerable<IClient>> GetGroupClientsAsync(string group);
+        IEnumerable<LocalClient> GetLocalClients();
         bool LocalClientExist(Guid sessionId);
     }
 }

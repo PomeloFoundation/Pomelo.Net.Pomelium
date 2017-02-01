@@ -9,6 +9,7 @@
         Disconnect,
         NodeDisconnect,
         Forward,
-        ForwardBack
+        ForwardBack,
+        Heartbeat
     }
 }
