@@ -7,7 +7,7 @@ namespace Pomelo.Net.Pomelium.Server
 {
     public class PomeliumHub
     {
-        public PomeliumContext Context { get; set; }
+        public HubContext Context { get; set; }
 
         protected virtual void OnInvoking()
         {

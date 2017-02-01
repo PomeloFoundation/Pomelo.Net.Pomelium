@@ -2,7 +2,7 @@
 
 namespace Pomelo.Net.Pomelium
 {
-    public class PacketBody
+    public class Packet
     {
         public PacketType Type { get; set; }
         public Guid RequestId { get; set; }

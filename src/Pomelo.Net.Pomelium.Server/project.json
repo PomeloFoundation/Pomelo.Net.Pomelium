@@ -6,7 +6,7 @@
         "Microsoft.Extensions.Caching.Redis": "1.1.0",
         "Microsoft.Extensions.DependencyModel": "1.1.0",
         "Newtonsoft.Json": "9.0.1",
-        "Pomelo.Net.Pomelium.Core": "1.0.0-*"
+        "Pomelo.Net.Pomelium.Core": "1.1.0-*"
     },
 
     "buildOptions": {
@@ -19,6 +19,8 @@
             "imports": "dnxcore50",
             "dependencies": {
                 "System.Net.Sockets": "4.3.0",
+                "System.Threading.Timer": "4.3.0",
+                "System.Threading.Tasks.Parallel": "4.3.0",
                 "Microsoft.Extensions.PlatformAbstractions": "1.1.0"
             }
         }

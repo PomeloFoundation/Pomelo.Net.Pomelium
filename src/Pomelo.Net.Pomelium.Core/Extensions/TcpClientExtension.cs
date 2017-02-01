@@ -8,7 +8,7 @@ namespace Pomelo.Net.Pomelium
 {
     public static class TcpClientExtension
     {
-        public static void Send(this TcpClient client, PacketBody packet)
+        public static void Send(this TcpClient client, Packet packet)
         {
             var stream = client.GetStream();
             var packetBuffer = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(packet));
@@ -17,7 +17,7 @@ namespace Pomelo.Net.Pomelium
             stream.Write(packetBuffer, 0, packetBuffer.Length);
         }
         
-        public static async Task SendAsync(this TcpClient client, PacketBody packet)
+        public static async Task SendAsync(this TcpClient client, Packet packet)
         {
             var stream = client.GetStream();
             var packetBuffer = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(packet));

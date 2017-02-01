@@ -23,7 +23,7 @@ namespace Pomelo.Net.Pomelium.Client
 
         public override bool TryInvokeMember(InvokeMemberBinder binder, object[] args, out object result)
         {
-            var packet = new PacketBody
+            var packet = new Packet
             {
                 Hub = _hubName,
                 Method = binder.Name,

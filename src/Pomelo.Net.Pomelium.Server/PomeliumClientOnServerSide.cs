@@ -10,6 +10,8 @@ namespace Pomelo.Net.Pomelium.Server
 {
     public class PomeliumClientOnServerSide : DynamicObject
     {
+        public Guid SessionId { get; set; }
+
         private TcpClient _tcpClient;
         private PomeliumServer _pomeliumServer;
         private static FieldInfo _remoteTaskSemaphoreFieldInfo = typeof(PomeliumServer).GetTypeInfo().DeclaredFields.Single(x => x.Name == "_remoteTaskSemaphore");
@@ -24,7 +26,7 @@ namespace Pomelo.Net.Pomelium.Server
 
         public override bool TryInvokeMember(InvokeMemberBinder binder, object[] args, out object result)
         {
-            var packet = new PacketBody
+            var packet = new Packet
             {
                 Method = binder.Name,
                 Arguments = args,

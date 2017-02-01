@@ -27,6 +27,14 @@ namespace Pomelo.Net.Pomelium.Client
             _port = port;
         }
 
+        ~PomeliumClient()
+        {
+            if (_tcpClient.Connected)
+            {
+                ResponseAsync(new Packet { SessionId = SessionId, Type = PacketType.Disconnect }).Wait();
+            }
+        }
+
 #if NETSTANDARD1_6
         public Task ConnectAsync()
         {
@@ -53,18 +61,18 @@ namespace Pomelo.Net.Pomelium.Client
                 buffer = new byte[length];
                 await stream.ReadAsync(buffer, 0, length);
                 var jsonStr = Encoding.UTF8.GetString(buffer);
-                var packet = JsonConvert.DeserializeObject<PacketBody>(jsonStr);
+                var packet = JsonConvert.DeserializeObject<Packet>(jsonStr);
                 await HandlePacket(packet);
             }
         }
 
-        protected virtual async Task HandlePacket(PacketBody body)
+        protected virtual async Task HandlePacket(Packet body)
         {
             if (body.Type == PacketType.InitSession)
             {
                 if (SessionId != default(Guid))
                 {
-                    await ResponseAsync(new PacketBody
+                    await ResponseAsync(new Packet
                     {
                         Type = PacketType.InitSession,
                         ReturnValue = SessionId
@@ -109,7 +117,7 @@ namespace Pomelo.Net.Pomelium.Client
                 }
                 catch (Exception ex)
                 {
-                    await ResponseAsync(new PacketBody
+                    await ResponseAsync(new Packet
                     {
                         Type = PacketType.Exception,
                         ReturnValue = ex.ToString(),
@@ -119,7 +127,7 @@ namespace Pomelo.Net.Pomelium.Client
                 }
                 if (method.ReturnType == typeof(void))
                 {
-                    await ResponseAsync(new PacketBody
+                    await ResponseAsync(new Packet
                     {
                         RequestId = body.RequestId,
                         Type = PacketType.Response,
@@ -137,7 +145,7 @@ namespace Pomelo.Net.Pomelium.Client
                         }
                         catch (Exception ex)
                         {
-                            await ResponseAsync(new PacketBody
+                            await ResponseAsync(new Packet
                             {
                                 Type = PacketType.Exception,
                                 ReturnValue = ex.ToString(),
@@ -145,7 +153,7 @@ namespace Pomelo.Net.Pomelium.Client
                             });
                             return;
                         }
-                        await ResponseAsync(new PacketBody
+                        await ResponseAsync(new Packet
                         {
                             RequestId = body.RequestId,
                             Type = PacketType.Response,
@@ -163,7 +171,7 @@ namespace Pomelo.Net.Pomelium.Client
                         }
                         catch (Exception ex)
                         {
-                            await ResponseAsync(new PacketBody
+                            await ResponseAsync(new Packet
                             {
                                 Type = PacketType.Exception,
                                 ReturnValue = ex.ToString(),
@@ -171,7 +179,7 @@ namespace Pomelo.Net.Pomelium.Client
                             });
                             return;
                         }
-                        await ResponseAsync(new PacketBody
+                        await ResponseAsync(new Packet
                         {
                             RequestId = body.RequestId,
                             Type = PacketType.Response,
@@ -180,7 +188,7 @@ namespace Pomelo.Net.Pomelium.Client
                     }
                     else
                     {
-                        await ResponseAsync(new PacketBody
+                        await ResponseAsync(new Packet
                         {
                             RequestId = body.RequestId,
                             Type = PacketType.Response,
@@ -191,7 +199,7 @@ namespace Pomelo.Net.Pomelium.Client
             }
         }
 
-        public async Task ResponseAsync(PacketBody body)
+        public async Task ResponseAsync(Packet body)
         {
             var stream = _tcpClient.GetStream();
             var jsonBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(body));

@@ -5,6 +5,10 @@
         Request,
         Response,
         InitSession,
-        Exception
+        Exception,
+        Disconnect,
+        NodeDisconnect,
+        Forward,
+        ForwardBack
     }
 }

@@ -6,5 +6,6 @@ namespace Pomelo.Net.Pomelium.Server
     public interface IPomeliumHubLocator
     {
         IEnumerable<Type> GetHubs();
+        Type FindHubByClassName(string className);
     }
 }
