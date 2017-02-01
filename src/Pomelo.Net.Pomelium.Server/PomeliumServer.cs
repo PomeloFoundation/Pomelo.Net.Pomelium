@@ -18,7 +18,6 @@ namespace Pomelo.Net.Pomelium.Server
     public class PomeliumServer
     {
         private TcpListener _tcpListner;
-        private Dictionary<Guid, PomeliumClientOnServerSide> _clients = new Dictionary<Guid, PomeliumClientOnServerSide>();
         private ISemaphoreProvider _semaphoreProvider;
         private IPomeliumHubLocator _pomeliumHubLocator;
         private ISession _session;
@@ -27,9 +26,14 @@ namespace Pomelo.Net.Pomelium.Server
         private IClientCollection _clientCollection;
         private INodeProvider _nodeProvider;
 
-        public dynamic Client(Guid id) => _clients[id];
-        public dynamic Client(string id) => _clients[Guid.Parse(id)];
-        public IEnumerable<PomeliumClientOnServerSide> Clients => _clients.Select(x => x.Value);
+        public dynamic Client(Guid id)
+        {
+            var task = _clientCollection.GetClientAsync(id);
+            task.Wait();
+            return task.Result;
+        }
+
+        public dynamic Client(string id) => Client(Guid.Parse(id));
 
         public PomeliumServer(
             IPomeliumHubLocator pomeliumHubLocator,
@@ -130,7 +134,6 @@ namespace Pomelo.Net.Pomelium.Server
             }
             else if (body.Type == PacketType.Disconnect)
             {
-                _clients.Remove(body.SessionId.Value);
                 await OnDisconnected(sender);
             }
             else if (body.Type == PacketType.Exception)
