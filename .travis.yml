@@ -14,6 +14,7 @@ mono:
   - 4.0.5
 os:
   - linux
+  - osx
 osx_image: xcode7.1
 branches:
   only:
@@ -21,7 +22,5 @@ branches:
     - release
     - dev
     - /^(.*\/)?ci-.*$/
-before_script:
-  - chmod ugo+x build.sh
 script:
   - ./build.sh --quiet verify
