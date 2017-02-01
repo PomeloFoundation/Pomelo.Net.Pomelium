@@ -27,14 +27,6 @@ namespace Pomelo.Net.Pomelium.Client
             _port = port;
         }
 
-        ~PomeliumClient()
-        {
-            if (_tcpClient.Connected)
-            {
-                ResponseAsync(new Packet { SessionId = SessionId, Type = PacketType.Disconnect }).Wait();
-            }
-        }
-
 #if NETSTANDARD1_6
         public Task ConnectAsync()
         {
@@ -215,5 +207,18 @@ namespace Pomelo.Net.Pomelium.Client
         public Guid SessionId { get; set; }
         
         public dynamic Server { get { return (dynamic)new DynamicHubCollection(this); } }
+
+        ~PomeliumClient()
+        {
+            try
+            {
+                _tcpClient.Send(new Packet
+                {
+                    SessionId = SessionId,
+                    Type = PacketType.Disconnect
+                });
+            }
+            catch { }
+        }
     }
 }
