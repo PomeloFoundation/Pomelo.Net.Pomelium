@@ -6,6 +6,7 @@ using System.Text;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Pomelo.Net.Pomelium.Server.Client;
 using Pomelo.Net.Pomelium.Server.Session;
@@ -31,14 +32,20 @@ namespace Pomelo.Net.Pomelium.Server
         public event Action<LocalClient> OnConnectedEvents;
         public event Action<LocalClient> OnDisconnectedEvents;
 
-        public dynamic Client(Guid id)
+        public static T CreateServer<T>()
+            where T : PomeliumServer
         {
-            var task = _clientCollection.GetClientAsync(id);
-            task.Wait();
-            return task.Result;
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddDistributedMemoryCache();
+            serviceCollection.AddPomeliumServer<T>();
+            var services = serviceCollection.BuildServiceProvider();
+            return services.GetRequiredService<T>();
         }
 
-        public dynamic Client(string id) => Client(Guid.Parse(id));
+        public static PomeliumServer CreateServer()
+        {
+            return CreateServer<PomeliumServer>();
+        }
 
         public PomeliumServer(
             IPomeliumHubLocator pomeliumHubLocator,
@@ -58,6 +65,14 @@ namespace Pomelo.Net.Pomelium.Server
             _nodeProvider = nodeProvider;
             _heartbeatTimer = new Timer(TimerCallback, null, 0, 5000);
         }
+        public dynamic Client(Guid id)
+        {
+            var task = _clientCollection.GetClientAsync(id);
+            task.Wait();
+            return task.Result;
+        }
+
+        public dynamic Client(string id) => Client(Guid.Parse(id));
 
         protected virtual async void TimerCallback(object state)
         {

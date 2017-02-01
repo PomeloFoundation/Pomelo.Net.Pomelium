@@ -8,11 +8,7 @@ namespace Pomelo.Net.Pomelium.TestServer
     {
         public static void Main(string[] args)
         {
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddDistributedMemoryCache();
-            serviceCollection.AddPomeliumServer();
-            var services = serviceCollection.BuildServiceProvider();
-            var server = services.GetRequiredService<PomeliumServer>();
+            var server = PomeliumServer.CreateServer();
             server.OnConnectedEvents += Server_OnConnectedEvents;
             server.OnDisconnectedEvents += Server_OnDisconnectedEvents;
             server.Start("127.0.0.1", 6000);

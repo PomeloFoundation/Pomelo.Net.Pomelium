@@ -3,7 +3,7 @@
 
     "dependencies": {
         "Microsoft.Extensions.DependencyInjection": "1.1.0",
-        "Microsoft.Extensions.Caching.Redis": "1.1.0",
+        "Microsoft.Extensions.Caching.Memory": "1.1.0",
         "Microsoft.Extensions.DependencyModel": "1.1.0",
         "Newtonsoft.Json": "9.0.1",
         "Pomelo.Net.Pomelium.Core": "1.1.0-*"
