@@ -30,14 +30,18 @@ namespace Pomelo.Net.Pomelium.Server.Node
         {
             foreach(var x in nodeInfo.AddressList)
             {
-                try
+                for (var i = 0; i < 3; i++)
                 {
-                    await _tcpClient.ConnectAsync(x, nodeInfo.Port);
-                    var stream = _tcpClient.GetStream();
-                    HandleStream(stream);
-                    break;
+                    try
+                    {
+                        await _tcpClient.ConnectAsync(x, nodeInfo.Port);
+                        var stream = _tcpClient.GetStream();
+                        HandleStream(stream);
+                        break;
+                    }
+                    catch { }
                 }
-                catch { }
+                throw new SocketException();
             }
         }
 

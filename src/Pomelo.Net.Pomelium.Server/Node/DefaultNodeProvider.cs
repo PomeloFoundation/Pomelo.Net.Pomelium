@@ -63,7 +63,20 @@ namespace Pomelo.Net.Pomelium.Server.Node
             Parallel.ForEach(_nodeInfo.Where(x => !_nodes.Any(y => y.Key == x.ServerId)), x => 
             {
                 if (x.ServerId != _serverIdentifier.GetIdentifier())
-                    _nodes.AddOrUpdate(x.ServerId, new Node(x, _serverIdentifier, _semaphoreProvider), (y, z) => z);
+                {
+                    try
+                    {
+                        _nodes.AddOrUpdate(x.ServerId, new Node(x, _serverIdentifier, _semaphoreProvider), (y, z) => z);
+                    }
+                    catch
+                    {
+                        _nodeInfo.Remove(x);
+                        lock (this)
+                        {
+                            _distributedCache.SetStringAsync(_pomeliumOptions.NodeCachingPrefix, JsonConvert.SerializeObject(_nodeInfo));
+                        }
+                    }
+                }
             });
             if (_needCollect)
             {

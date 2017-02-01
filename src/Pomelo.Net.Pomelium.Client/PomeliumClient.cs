@@ -11,33 +11,24 @@ namespace Pomelo.Net.Pomelium.Client
 {
     public class PomeliumClient
     {
-        private string _host;
-        private int _port;
         private Dictionary<Guid, TaskCompletionSource<object>> _remoteTaskSemaphore = new Dictionary<Guid, TaskCompletionSource<object>>();
-
-        public PomeliumClient(TcpClient tcpClient)
-        {
-            _tcpClient = tcpClient;
-        }
         
-        public PomeliumClient(string host, int port)
+        public PomeliumClient()
         {
             _tcpClient = new TcpClient();
-            _host = host;
-            _port = port;
         }
 
 #if NETSTANDARD1_6
-        public Task ConnectAsync()
+        public Task ConnectAsync(string host, int port)
         {
-            var task = _tcpClient.ConnectAsync(_host, _port);
+            var task = _tcpClient.ConnectAsync(host, port);
             HandleStream();
             return task;
         }
 #else
-        public void Connect()
+        public void Connect(string host, int port)
         {
-            _tcpClient.Connect(_host, _port);
+            _tcpClient.Connect(host, port);
             HandleStream();
         }
 #endif
