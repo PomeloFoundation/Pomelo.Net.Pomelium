@@ -26,12 +26,13 @@ namespace Pomelo.Net.Pomelium.Server.HubActivitor
         {
             var hubType = _pomeliumHubLocator.FindHubByClassName(hubName);
             var hub = (PomeliumHub)Activator.CreateInstance(hubType);
-            hub.Context = new HubContext {
+            hub.Context = new HubContext
+            {
                 Client = client,
                 Request = request,
-                SessionId = request.SessionId.Value,
+                SessionId = request.SessionId,
                 Resolver = _serviceProvider,
-                Session = new SessionCollection(_session, request.SessionId.Value)
+                Session = new SessionCollection(_session, request.SessionId)
             };
             return hub;
         }

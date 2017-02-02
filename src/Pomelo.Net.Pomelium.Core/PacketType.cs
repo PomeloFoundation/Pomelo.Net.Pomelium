@@ -4,7 +4,6 @@
     {
         Request,
         Response,
-        InitSession,
         Exception,
         Disconnect,
         NodeDisconnect,

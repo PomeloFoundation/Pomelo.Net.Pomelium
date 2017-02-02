@@ -13,6 +13,7 @@ using Pomelo.Net.Pomelium.Server.Session;
 using Pomelo.Net.Pomelium.Server.Semaphore;
 using Pomelo.Net.Pomelium.Server.HubActivitor;
 using Pomelo.Net.Pomelium.Server.Node;
+using Pomelo.Net.Pomelium.Server.GarbageCollector;
 
 namespace Pomelo.Net.Pomelium.Server
 {
@@ -26,10 +27,12 @@ namespace Pomelo.Net.Pomelium.Server
         private IHubActivitor _hubActivitor;
         private IClientCollection _clientCollection;
         private INodeProvider _nodeProvider;
+        private IGarbageCollector _garbageCollector;
         private Timer _heartbeatTimer;
         private bool _heartbeatLocker;
 
         public event Action<LocalClient> OnConnectedEvents;
+        public event Action<LocalClient> OnReconnectedEvents;
         public event Action<LocalClient> OnDisconnectedEvents;
 
         public static T CreateServer<T>()
@@ -54,7 +57,8 @@ namespace Pomelo.Net.Pomelium.Server
             ISemaphoreProvider semaphoreProvider,
             IHubActivitor hubActivitor,
             IClientCollection clientCollection,
-            INodeProvider nodeProvider)
+            INodeProvider nodeProvider,
+            IGarbageCollector garbageCollector)
         {
             _pomeliumHubLocator = pomeliumHubLocator;
             _session = session;
@@ -79,25 +83,31 @@ namespace Pomelo.Net.Pomelium.Server
             if (_heartbeatLocker)
                 return;
             _heartbeatLocker = true;
-            var tasks = new List<Task>();
-            foreach(var x in _clientCollection.GetLocalClients())
+            try
             {
-                tasks.Add(Task.Run(async ()=> 
+                var tasks = new List<Task>();
+                foreach (var x in _clientCollection.GetLocalClients())
                 {
-                    try
+                    tasks.Add(Task.Run(async () =>
                     {
-                        await x.SendAsync(new Packet { SessionId = x.SessionId, Type = PacketType.Heartbeat });
-                    }
-                    catch
-                    {
-                        await _clientCollection.RemoveLocalClientAsync(x);
-                        OnDisconnected(x);
-                        GC.Collect();
-                    }
-                }));
+                        try
+                        {
+                            await x.SendAsync(new Packet { SessionId = x.SessionId, Type = PacketType.Heartbeat });
+                        }
+                        catch
+                        {
+                            await _clientCollection.RemoveLocalClientAsync(x);
+                            OnDisconnected(x);
+                            GC.Collect();
+                        }
+                    }));
+                }
+                Task.WaitAll(tasks.ToArray());
             }
-            Task.WaitAll(tasks.ToArray());
-            _heartbeatLocker = false;
+            finally
+            {
+                _heartbeatLocker = false;
+            }
         }
 
         public async void Start(string address, int port)
@@ -130,33 +140,43 @@ namespace Pomelo.Net.Pomelium.Server
                 await stream.ReadAsync(buffer, 0, length);
                 var jsonStr = Encoding.UTF8.GetString(buffer);
                 var packet = JsonConvert.DeserializeObject<Packet>(jsonStr);
+                client.SessionId = packet.SessionId;
                 await HandlePacket(packet, client);
             }
         }
 
         protected virtual async Task HandlePacket(Packet body, LocalClient sender)
         {
-            if (body.SessionId == null || body.SessionId.Value == default(Guid))
+            if (!await _session.ExistsAsync(body.SessionId))
             {
-                var id = Guid.NewGuid();
-                sender.SessionId = id;
-                _clientCollection.StoreLocalClientAsync(sender);
-                body.SessionId = id;
-                sender.SessionId = id;
-                await ResponseAsync(sender, new Packet
+                if (body.Type == PacketType.Forward && CheckNode(body.SessionId))
                 {
-                    ReturnValue = id,
-                    Type = PacketType.InitSession
-                });
-                await OnConnected(sender);
+                    sender.IsNode = true;
+                }
+                else
+                {
+                    if (await _garbageCollector.IsInBufferAsync(body.SessionId))
+                    {
+                        await _garbageCollector.UnmarkGarbageAsync(body.SessionId);
+                        OnReconnected(sender);
+                    }
+                    else
+                    {
+                        OnConnected(sender);
+                    }
+                    if (_clientCollection.LocalClientExist(body.SessionId))
+                        _clientCollection.StoreLocalClientAsync(sender);
+                    _session.InitAsync(body.SessionId);
+                }
             }
+
             if (body.Type == PacketType.Forward)
             {
-                if (CheckNode(body.SessionId.Value))
+                if (sender.IsNode)
                 {
                     var packet = JsonConvert.DeserializeObject<Packet>(body.Arguments.First().ToString());
                     object returnValue = null;
-                    var client = await _clientCollection.GetClientAsync(packet.SessionId.Value);
+                    var client = await _clientCollection.GetClientAsync(packet.SessionId);
                     try { returnValue = await client.InvokeAsync(packet.Method, packet.Arguments); } catch (Exception ex) { await ResponseAsync(sender, new Packet { Code = 403, Type = PacketType.Exception, ReturnValue = ex.ToString() }); }
                     await ResponseAsync(sender, new Packet
                     {
@@ -168,15 +188,6 @@ namespace Pomelo.Net.Pomelium.Server
                 else
                 {
                     await ResponseAsync(sender, new Packet { Code = 403, Type = PacketType.Exception, ReturnValue = "Forbidden" });
-                }
-            }
-            else if (body.Type == PacketType.InitSession)
-            {
-                sender.SessionId = Guid.Parse(body.ReturnValue.ToString());
-                if (_clientCollection.LocalClientExist(sender.SessionId))
-                {
-                    _clientCollection.StoreLocalClientAsync(sender);
-                    await OnConnected(sender);
                 }
             }
             else if (body.Type == PacketType.Disconnect)
@@ -220,6 +231,11 @@ namespace Pomelo.Net.Pomelium.Server
         protected virtual async Task OnConnected(LocalClient Client)
         {
             OnConnectedEvents?.Invoke(Client);
+        }
+
+        protected virtual async Task OnReconnected(LocalClient Client)
+        {
+            OnReconnectedEvents?.Invoke(Client);
         }
 
         protected virtual async Task OnDisconnected(LocalClient Client)

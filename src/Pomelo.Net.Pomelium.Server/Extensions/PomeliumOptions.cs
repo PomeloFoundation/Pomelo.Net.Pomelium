@@ -13,5 +13,9 @@ namespace Pomelo.Net.Pomelium.Server.Extensions
         public string SessionCachingPrefix { get; set; } = "POMELIUM_SESSION_";
         public string ClientsCachingPrefix { get; set; } = "POMELIUM_CLIENTS_";
         public string GroupsCachingPrefix { get; set; } = "POMELIUM_GROUP_";
+        public string ClientJoinedGroupsCachingPrefix { get; set; } = "POMELIUM_JOINED_GROUP_";
+        public string ClientOwnedSessionKeysCachingPrefix { get; set; } = "POMELIUM_CLIENT_SESSION_KEYS_";
+        public string GCCachingPrefix { get; set; } = "POMELIUM_GARBAGE_COLLECT";
+        public TimeSpan GarbageCollectBufferTimeSpan = new TimeSpan(0, 5, 0);
     }
 }

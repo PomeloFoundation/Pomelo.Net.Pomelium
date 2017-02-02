@@ -19,28 +19,26 @@ namespace Pomelo.Net.Pomelium.Server.Client
         private INodeProvider _nodeProvider;
         private IServerIdentifier _serverIdentifier;
         private Dictionary<Guid, IClient> _dic;
-        private AsyncSemaphore _lockerAddGroup = new AsyncSemaphore();
-        private AsyncSemaphore _lockerRemoveGroup = new AsyncSemaphore();
-        private AsyncSemaphore _lockerNodeClients = new AsyncSemaphore();
+        private AsyncLockers _asyncLockers;
 
-        public DefaultClientCollection(PomeliumOptions pomeliumOptions, IDistributedCache distributedCache, INodeProvider nodeProvider, IServerIdentifier serverIdentifier)
+        public DefaultClientCollection(
+            PomeliumOptions pomeliumOptions, 
+            IDistributedCache distributedCache, 
+            INodeProvider nodeProvider,
+            IServerIdentifier serverIdentifier,
+            AsyncLockers asyncLockers)
         {
             _pomeliumOptions = pomeliumOptions;
             _distributedCache = distributedCache;
             _nodeProvider = nodeProvider;
             _serverIdentifier = serverIdentifier;
-            _dic = new Dictionary<Guid, IClient>(); ;
+            _dic = new Dictionary<Guid, IClient>();
+            _asyncLockers = asyncLockers;
         }
 
-        public async Task AddClientIntoGroupAsync(IClient client, string group)
+        public Task AddClientIntoGroupAsync(IClient client, string group)
         {
-            await _lockerAddGroup.WaitAsync();
-            var sessionIds = JsonConvert.DeserializeObject<List<Guid>>(await _distributedCache.GetStringAsync(_pomeliumOptions.GroupsCachingPrefix + group.ToUpper()) ?? "[]");
-            if (sessionIds.Contains(client.SessionId))
-                return;
-            sessionIds.Add(client.SessionId);
-            await _distributedCache.SetStringAsync(_pomeliumOptions.GroupsCachingPrefix + group.ToUpper(), JsonConvert.SerializeObject(sessionIds.Distinct()));
-            _lockerAddGroup.Release();
+            return AddClientIntoGroupAsync(client.SessionId, group);
         }
 
         public async Task<IClient> GetClientAsync(Guid sessionId)
@@ -81,32 +79,31 @@ namespace Pomelo.Net.Pomelium.Server.Client
 
         public async Task StoreLocalClientAsync(LocalClient client)
         {
-            await _lockerNodeClients.WaitAsync();
-
-            if (_dic.ContainsKey(client.SessionId))
-                _dic[client.SessionId] = client;
-            else
-                _dic.Add(client.SessionId, client);
-
-            var clientInfo = _dic.Select(x => new ClientInfo
+            await _asyncLockers.ClientsOfNodeOperationLocker.WaitAsync();
+            try
             {
-                HashCode = x.Value.GetHashCode(),
-                ServerId = _serverIdentifier.GetIdentifier(),
-                SessionId = x.Key
-            });
-            await _distributedCache.SetStringAsync(_pomeliumOptions.ClientsCachingPrefix + _serverIdentifier.GetIdentifier(), JsonConvert.SerializeObject(clientInfo));
-            _lockerNodeClients.Release();
+                if (_dic.ContainsKey(client.SessionId))
+                    _dic[client.SessionId] = client;
+                else
+                    _dic.Add(client.SessionId, client);
+
+                var clientInfo = _dic.Select(x => new ClientInfo
+                {
+                    HashCode = x.Value.GetHashCode(),
+                    ServerId = _serverIdentifier.GetIdentifier(),
+                    SessionId = x.Key
+                });
+                await _distributedCache.SetStringAsync(_pomeliumOptions.ClientsCachingPrefix + _serverIdentifier.GetIdentifier(), JsonConvert.SerializeObject(clientInfo));
+            }
+            finally
+            {
+                _asyncLockers.ClientsOfNodeOperationLocker.Release();
+            }
         }
 
-        public async Task RemoveClientFromGroupAsync(IClient client, string group)
+        public Task RemoveClientFromGroupAsync(IClient client, string group)
         {
-            await _lockerRemoveGroup.WaitAsync();
-            var sessionIds = JsonConvert.DeserializeObject<List<Guid>>(await _distributedCache.GetStringAsync(_pomeliumOptions.GroupsCachingPrefix + group.ToUpper()) ?? "[]");
-            if (!sessionIds.Contains(client.SessionId))
-                return;
-            sessionIds.Remove(client.SessionId);
-            await _distributedCache.SetStringAsync(_pomeliumOptions.GroupsCachingPrefix + group.ToUpper(), JsonConvert.SerializeObject(sessionIds.Distinct()));
-            _lockerAddGroup.Release();
+            return RemoveClientFromGroupAsync(client.SessionId, group.ToUpper());
         }
 
         public async Task<IEnumerable<IClient>> GetGroupClientsAsync(string group)
@@ -132,26 +129,99 @@ namespace Pomelo.Net.Pomelium.Server.Client
 
         public async Task RemoveLocalClientAsync(LocalClient client)
         {
-            await _lockerNodeClients.WaitAsync();
-
-            if (_dic.ContainsKey(client.SessionId))
-                _dic.Remove(client.SessionId);
-            else
-                return;
-
-            var clientInfo = _dic.Select(x => new ClientInfo
+            await _asyncLockers.ClientsOfNodeOperationLocker.WaitAsync();
+            try
             {
-                HashCode = x.Value.GetHashCode(),
-                ServerId = _serverIdentifier.GetIdentifier(),
-                SessionId = x.Key
-            });
-            await _distributedCache.SetStringAsync(_pomeliumOptions.ClientsCachingPrefix + _serverIdentifier.GetIdentifier(), JsonConvert.SerializeObject(clientInfo));
-            _lockerNodeClients.Release();
+                if (_dic.ContainsKey(client.SessionId))
+                    _dic.Remove(client.SessionId);
+                else
+                    return;
+
+                var clientInfo = _dic.Select(x => new ClientInfo
+                {
+                    HashCode = x.Value.GetHashCode(),
+                    ServerId = _serverIdentifier.GetIdentifier(),
+                    SessionId = x.Key
+                });
+                await _distributedCache.SetStringAsync(_pomeliumOptions.ClientsCachingPrefix + _serverIdentifier.GetIdentifier(), JsonConvert.SerializeObject(clientInfo));
+            }
+            finally
+            {
+                _asyncLockers.ClientsOfNodeOperationLocker.Release();
+            }
         }
 
         public IEnumerable<LocalClient> GetLocalClients()
         {
             return _dic.Select(x => x.Value as LocalClient);
+        }
+
+        public async Task AddClientIntoGroupAsync(Guid sessionId, string group)
+        {
+            await _asyncLockers.GroupMembersOperationLocker.WaitAsync();
+            try
+            {
+                var sessionIds = JsonConvert.DeserializeObject<List<Guid>>(await _distributedCache.GetStringAsync(_pomeliumOptions.GroupsCachingPrefix + group.ToUpper()) ?? "[]");
+                if (sessionIds.Contains(sessionId))
+                    return;
+                sessionIds.Add(sessionId);
+                await _distributedCache.SetStringAsync(_pomeliumOptions.GroupsCachingPrefix + group.ToUpper(), JsonConvert.SerializeObject(sessionIds.Distinct()));
+            }
+            finally
+            {
+                _asyncLockers.GroupMembersOperationLocker.Release();
+            }
+            await _asyncLockers.ClientJoinedGroupsOperationLocker.WaitAsync();
+            try
+            {
+                var groups = JsonConvert.DeserializeObject<List<string>>(await _distributedCache.GetStringAsync(_pomeliumOptions.ClientJoinedGroupsCachingPrefix + sessionId) ?? "[]");
+                if (!groups.Contains(group.ToUpper()))
+                {
+                    groups.Add(group.ToUpper());
+                    await _distributedCache.SetStringAsync(_pomeliumOptions.ClientJoinedGroupsCachingPrefix + sessionId, JsonConvert.SerializeObject(groups));
+                }
+            }
+            finally
+            {
+                _asyncLockers.ClientJoinedGroupsOperationLocker.Release();
+            }
+        }
+
+        public async Task RemoveClientFromGroupAsync(Guid sessionId, string group)
+        {
+            await _asyncLockers.GroupMembersOperationLocker.WaitAsync();
+            try
+            {
+                var sessionIds = JsonConvert.DeserializeObject<List<Guid>>(await _distributedCache.GetStringAsync(_pomeliumOptions.GroupsCachingPrefix + group.ToUpper()) ?? "[]");
+                if (!sessionIds.Contains(sessionId))
+                    return;
+                sessionIds.Remove(sessionId);
+                await _distributedCache.SetStringAsync(_pomeliumOptions.GroupsCachingPrefix + group.ToUpper(), JsonConvert.SerializeObject(sessionIds.Distinct()));
+            }
+            finally
+            {
+                _asyncLockers.GroupMembersOperationLocker.Release();
+            }
+            await _asyncLockers.ClientJoinedGroupsOperationLocker.WaitAsync();
+            try
+            {
+                var groups = JsonConvert.DeserializeObject<List<string>>(await _distributedCache.GetStringAsync(_pomeliumOptions.ClientJoinedGroupsCachingPrefix + sessionId) ?? "[]");
+                if (groups.Contains(group.ToUpper()))
+                {
+                    groups.Remove(group.ToUpper());
+                    await _distributedCache.SetStringAsync(_pomeliumOptions.ClientJoinedGroupsCachingPrefix + sessionId, JsonConvert.SerializeObject(groups));
+                }
+            }
+            finally
+            {
+                _asyncLockers.ClientJoinedGroupsOperationLocker.Release();
+            }
+        }
+
+        public async Task<IEnumerable<string>> GetJoinedGroupAsync(Guid sessionId)
+        {
+            var groups = JsonConvert.DeserializeObject<List<string>>(await _distributedCache.GetStringAsync(_pomeliumOptions.ClientJoinedGroupsCachingPrefix + sessionId) ?? "[]");
+            return groups;
         }
     }
 }

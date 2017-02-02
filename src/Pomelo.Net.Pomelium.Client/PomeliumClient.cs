@@ -51,22 +51,7 @@ namespace Pomelo.Net.Pomelium.Client
 
         protected virtual async Task HandlePacket(Packet body)
         {
-            if (body.Type == PacketType.InitSession)
-            {
-                if (SessionId != default(Guid))
-                {
-                    await ResponseAsync(new Packet
-                    {
-                        Type = PacketType.InitSession,
-                        ReturnValue = SessionId
-                    });
-                }
-                else
-                {
-                    SessionId = Guid.Parse(body.ReturnValue.ToString());
-                }
-            }
-            else if (body.Type == PacketType.Exception)
+            if (body.Type == PacketType.Exception)
             {
                 if (_remoteTaskSemaphore.ContainsKey(body.RequestId))
                 {

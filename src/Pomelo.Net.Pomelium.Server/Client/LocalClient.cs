@@ -21,6 +21,8 @@ namespace Pomelo.Net.Pomelium.Server.Client
 
         public bool IsLocal => true;
 
+        public bool IsNode { get; set; }
+
         public Guid SessionId { get; set; }
 
         public virtual async Task<object> InvokeAsync(string method, object[] args)

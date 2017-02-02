@@ -1,5 +1,6 @@
 ﻿using System;
 using Pomelo.Net.Pomelium.Server;
+using Pomelo.Net.Pomelium.Server.Async;
 using Pomelo.Net.Pomelium.Server.Session;
 using Pomelo.Net.Pomelium.Server.Semaphore;
 using Pomelo.Net.Pomelium.Server.HubActivitor;
@@ -7,6 +8,7 @@ using Pomelo.Net.Pomelium.Server.ServerIdentifier;
 using Pomelo.Net.Pomelium.Server.Node;
 using Pomelo.Net.Pomelium.Server.Client;
 using Pomelo.Net.Pomelium.Server.Extensions;
+using Pomelo.Net.Pomelium.Server.GarbageCollector;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -25,6 +27,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IServerIdentifier, DefaultServerIdentifier>()
                 .AddSingleton<INodeProvider, DefaultNodeProvider>()
                 .AddSingleton<IClientCollection, DefaultClientCollection>()
+                .AddSingleton<IGarbageCollector, DefaultGarbageCollector>()
+                .AddSingleton<AsyncLockers>()
                 .AddSingleton(option);
         }
 

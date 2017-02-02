@@ -37,52 +37,56 @@ namespace Pomelo.Net.Pomelium.Server.Node
         protected virtual async void TimeIntervalCallBack(object state)
         {
             if (_lock)
-            {
                 return;
-            }
             _lock = true;
             _needCollect = false;
-            var json = await _distributedCache.GetStringAsync(_pomeliumOptions.NodeCachingPrefix) ?? "[]";
-            _nodeInfo = new HashSet<NodeInfo>(JsonConvert.DeserializeObject<IEnumerable<NodeInfo>>(json));
-            if (!_nodeInfo.Any(x => x.ServerId == _serverIdentifier.GetIdentifier()))
+            try
             {
-                _nodeInfo.Add(new NodeInfo
+                var json = await _distributedCache.GetStringAsync(_pomeliumOptions.NodeCachingPrefix) ?? "[]";
+                _nodeInfo = new HashSet<NodeInfo>(JsonConvert.DeserializeObject<IEnumerable<NodeInfo>>(json));
+                if (!_nodeInfo.Any(x => x.ServerId == _serverIdentifier.GetIdentifier()))
                 {
-                    AddressList = (await DnsResolutionAsync(_pomeliumOptions.Address)).Select(x => x.ToString()),
-                    Port = _pomeliumOptions.Port,
-                    ServerId = _serverIdentifier.GetIdentifier()
+                    _nodeInfo.Add(new NodeInfo
+                    {
+                        AddressList = (await DnsResolutionAsync(_pomeliumOptions.Address)).Select(x => x.ToString()),
+                        Port = _pomeliumOptions.Port,
+                        ServerId = _serverIdentifier.GetIdentifier()
+                    });
+                    await _distributedCache.SetStringAsync(_pomeliumOptions.NodeCachingPrefix, JsonConvert.SerializeObject(_nodeInfo));
+                }
+                Parallel.ForEach(_nodes.Where(x => !_nodeInfo.Any(y => y.ServerId == x.Key)), x =>
+                {
+                    Node tmp;
+                    _nodes.TryRemove(x.Key, out tmp);
+                    _needCollect = true;
                 });
-                await _distributedCache.SetStringAsync(_pomeliumOptions.NodeCachingPrefix, JsonConvert.SerializeObject(_nodeInfo));
-            }
-            Parallel.ForEach(_nodes.Where(x => !_nodeInfo.Any(y => y.ServerId == x.Key)), x =>
-            {
-                Node tmp;
-                _nodes.TryRemove(x.Key, out tmp);
-                _needCollect = true;
-            });
-            Parallel.ForEach(_nodeInfo.Where(x => !_nodes.Any(y => y.Key == x.ServerId)), x => 
-            {
-                if (x.ServerId != _serverIdentifier.GetIdentifier())
+                Parallel.ForEach(_nodeInfo.Where(x => !_nodes.Any(y => y.Key == x.ServerId)), x =>
                 {
-                    try
+                    if (x.ServerId != _serverIdentifier.GetIdentifier())
                     {
-                        _nodes.AddOrUpdate(x.ServerId, new Node(x, _serverIdentifier, _semaphoreProvider), (y, z) => z);
-                    }
-                    catch
-                    {
-                        _nodeInfo.Remove(x);
-                        lock (this)
+                        try
                         {
-                            _distributedCache.SetStringAsync(_pomeliumOptions.NodeCachingPrefix, JsonConvert.SerializeObject(_nodeInfo));
+                            _nodes.AddOrUpdate(x.ServerId, new Node(x, _serverIdentifier, _semaphoreProvider), (y, z) => z);
+                        }
+                        catch
+                        {
+                            _nodeInfo.Remove(x);
+                            lock (this)
+                            {
+                                _distributedCache.SetStringAsync(_pomeliumOptions.NodeCachingPrefix, JsonConvert.SerializeObject(_nodeInfo));
+                            }
                         }
                     }
+                });
+                if (_needCollect)
+                {
+                    GC.Collect();
                 }
-            });
-            if (_needCollect)
-            {
-                GC.Collect();
             }
-            _lock = false;
+            finally
+            {
+                _lock = false;
+            }
         }
 
         protected virtual async Task<IEnumerable<IPAddress>> DnsResolutionAsync(string address)
